@@ -21,3 +21,29 @@ export const mockSnippets = [
 		code: "import requests\n\nresponse = requests.get('https://api.example.com/data')\nprint(response.json())",
 	},
 ];
+
+export const existingSnippet = {
+	id: "1",
+	title: "React UseAuth Hook",
+	language: "typescript",
+	code: `export const useAuth = () => {\n  const context = useContext(AuthContext);\n  return context;\n};`,
+};
+
+export const mockSnippet = {
+	id: "1",
+	title: "React UseAuth Hook",
+	language: "typescript",
+	date: "Oct 24, 2024",
+	code: `export const useAuth = () => {
+  const context = useContext(AuthContext);
+  
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  
+  return context;
+};
+
+// Usage example:
+// const { user, login } = useAuth();`,
+};

@@ -84,7 +84,7 @@ export default function CreateSnippet() {
 
 					<div className="flex justify-end gap-3 pt-2">
 						<Button variant="ghost" type="button" asChild>
-							<Link to="/">Cancel</Link>
+							<Link to="..">Cancel</Link>
 						</Button>
 						<Button type="submit" className="min-w-[120px]">
 							<Save className="mr-2 h-4 w-4" />
