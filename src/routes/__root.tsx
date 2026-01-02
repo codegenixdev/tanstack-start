@@ -39,6 +39,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	}),
 
 	shellComponent: RootDocument,
+	errorComponent: () => <div>Global Error</div>,
+	notFoundComponent: () => <div>Global Not Found</div>,
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -49,7 +51,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body>
 				<ConfirmProvider>
-					<div className="max-w-6xl mx-auto">
+					<div className="max-w-6xl mx-auto py-2 px-4">
 						<Toaster />
 						<Navbar />
 						{children}

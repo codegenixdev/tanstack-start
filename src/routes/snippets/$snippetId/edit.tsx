@@ -1,6 +1,5 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
 import { ArrowLeft, PencilLine, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,29 +13,21 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { db } from "@/db";
-import { snippets, updateSnippetSchema } from "@/db/schema";
-import { getSnippet } from "@/routes/snippets/$snippetId";
+import { useUpdateSnippet } from "@/routes/snippets/-services/mutations";
+import { getSnippetQueryOptions } from "@/routes/snippets/-services/queries";
 
 export const Route = createFileRoute("/snippets/$snippetId/edit")({
 	component: EditSnippet,
-	loader: async ({ params }) => {
-		return await getSnippet({ data: { snippetId: params.snippetId } });
+	loader: async ({ params, context }) => {
+		context.queryClient.prefetchQuery(getSnippetQueryOptions(params.snippetId));
 	},
 });
 
-const updateSnippet = createServerFn({
-	method: "POST",
-})
-	.inputValidator(updateSnippetSchema)
-	.handler(async ({ params }) => {
-		await db.update(snippets).set(params).where(eq(snippets.id, params.id));
-		return { success: true };
-	});
-
 export default function EditSnippet() {
-	const snippet = Route.useLoaderData();
-	if (!snippet) {
+	const { snippetId } = Route.useParams();
+	const updateSnippetMutation = useUpdateSnippet();
+	const snippet = useSuspenseQuery(getSnippetQueryOptions(snippetId));
+	if (!snippet.data) {
 		return "Snippet not found";
 	}
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -46,19 +37,15 @@ export default function EditSnippet() {
 		const language = formData.get("language") as string;
 		const code = formData.get("code") as string;
 		const description = formData.get("description") as string;
-		try {
-			await updateSnippet({
-				data: {
-					id: Number(snippet.id),
-					title,
-					language,
-					code,
-					description,
-				},
-			});
-		} catch (error) {
-			console.error(error);
-		}
+		updateSnippetMutation.mutate({
+			data: {
+				id: Number(snippetId),
+				title,
+				language,
+				code,
+				description,
+			},
+		});
 	};
 	return (
 		<div className="p-4 md:p-8 font-sans flex items-center justify-center">
@@ -72,7 +59,7 @@ export default function EditSnippet() {
 						<p className="text-sm text-muted-foreground">
 							Editing{" "}
 							<span className="font-semibold text-foreground">
-								"{snippet.title}"
+								"{snippet.data.title}"
 							</span>
 						</p>
 					</div>
@@ -89,12 +76,15 @@ export default function EditSnippet() {
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="space-y-2">
 								<Label htmlFor="title">Title</Label>
-								<Input defaultValue={snippet.title} className="bg-background" />
+								<Input
+									defaultValue={snippet.data.title}
+									className="bg-background"
+								/>
 							</div>
 
 							<div className="space-y-2">
 								<Label htmlFor="language">Language</Label>
-								<Select defaultValue={snippet.language}>
+								<Select defaultValue={snippet.data.language}>
 									<SelectTrigger className="bg-background">
 										<SelectValue placeholder="Select language" />
 									</SelectTrigger>
@@ -113,20 +103,20 @@ export default function EditSnippet() {
 							<Label htmlFor="code">Code</Label>
 							<div className="relative">
 								<Textarea
-									defaultValue={snippet.code}
+									defaultValue={snippet.data.code}
 									className="min-h-[300px] font-mono text-sm bg-slate-950 text-slate-50 border-slate-800 focus-visible:ring-orange-500"
 								/>
 
 								<Input
 									className="mt-3"
 									name="description"
-									defaultValue={snippet.description || ""}
+									defaultValue={snippet.data.description || ""}
 								/>
 							</div>
 						</div>
 
 						<div className="flex justify-end gap-3 pt-2">
-							<input type="hidden" name="id" value={snippet.id} />
+							<input type="hidden" name="id" value={snippet.data.id} />
 
 							<Button variant="ghost" type="button" asChild>
 								<Link to="..">Cancel</Link>

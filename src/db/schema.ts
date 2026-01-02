@@ -1,3 +1,4 @@
+import type { InferSelectModel } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createSelectSchema } from "drizzle-zod";
 
@@ -20,3 +21,5 @@ export const updateSnippetSchema = createSelectSchema(snippets, {
 	createdAt: (schema) => schema.optional(),
 	description: (schema) => schema.optional(),
 });
+
+export type Snippet = InferSelectModel<typeof snippets>;

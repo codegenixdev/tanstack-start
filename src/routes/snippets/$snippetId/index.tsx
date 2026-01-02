@@ -1,43 +1,44 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
-import { ArrowLeft, Calendar, Check, Copy, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+	createFileRoute,
+	Link,
+	notFound,
+	redirect,
+	useNavigate,
+} from "@tanstack/react-router";
+import { ArrowLeft, Calendar, Copy, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { db } from "@/db";
-import { snippets } from "@/db/schema";
-
-export const getSnippet = createServerFn({ method: "GET" })
-	.inputValidator((params: { snippetId: string }) => params)
-	.handler(async ({ data }) => {
-		return await db.query.snippets.findFirst({
-			where: eq(snippets.id, Number(data.snippetId)),
-		});
-	});
+import { useDeleteSnippet } from "@/routes/snippets/-services/mutations";
+import { getSnippetQueryOptions } from "@/routes/snippets/-services/queries";
 
 export const Route = createFileRoute("/snippets/$snippetId/")({
 	component: SnippetDetail,
-	loader: async ({ params }) => {
-		return await getSnippet({ data: { snippetId: params.snippetId } });
+	loader: ({ context, params }) => {
+		context.queryClient.prefetchQuery(getSnippetQueryOptions(params.snippetId));
 	},
 });
 
 export default function SnippetDetail() {
-	const snippet = Route.useLoaderData();
-	const [isCopied, setIsCopied] = useState(false);
+	const { snippetId } = Route.useParams();
+	const navigate = useNavigate();
+	const snippet = useSuspenseQuery(getSnippetQueryOptions(snippetId));
+	const deleteSnippetMutation = useDeleteSnippet();
 	const confirm = useConfirm();
 
-	if (!snippet) {
-		return "Snippet not found";
+	if (!snippet.data) {
+		navigate({ to: "/snippets" });
 	}
 
 	const handleCopy = () => {
-		navigator.clipboard.writeText(snippet.code);
-		setIsCopied(true);
-		setTimeout(() => setIsCopied(false), 2000);
+		navigator.clipboard.writeText(snippet.data?.code ?? "");
+	};
+
+	const handleDelete = async () => {
+		await confirm();
+		deleteSnippetMutation.mutate(Number(snippet.data?.id));
 	};
 
 	return (
@@ -50,9 +51,9 @@ export default function SnippetDetail() {
 						className="pl-0 text-muted-foreground hover:text-foreground"
 						asChild
 					>
-						<Link to="/">
+						<Link to="..">
 							<ArrowLeft className="mr-2 h-4 w-4" />
-							Back to Dashboard
+							Back
 						</Link>
 					</Button>
 				</div>
@@ -63,18 +64,18 @@ export default function SnippetDetail() {
 							<div className="space-y-3">
 								<div className="flex items-center gap-3">
 									<h1 className="text-3xl font-bold text-foreground">
-										{snippet.title}
+										{snippet.data.title}
 									</h1>
 									<Badge
 										variant="outline"
 										className="text-sm px-3 py-1 uppercase tracking-wide"
 									>
-										{snippet.language}
+										{snippet.data.language}
 									</Badge>
 								</div>
 								<div className="flex items-center text-sm text-muted-foreground gap-2">
 									<Calendar className="h-4 w-4" />
-									<span>Created on {snippet.createdAt}</span>
+									<span>Created on {snippet.data.createdAt}</span>
 								</div>
 							</div>
 
@@ -83,20 +84,14 @@ export default function SnippetDetail() {
 									<Link
 										to="/snippets/$snippetId/edit"
 										params={{
-											snippetId: snippet.id.toString(),
+											snippetId: snippet.data.id.toString(),
 										}}
 									>
 										<Pencil className="h-4 w-4 mr-2" />
 										Edit
 									</Link>
 								</Button>
-								<Button
-									variant="destructive"
-									size="sm"
-									onClick={async () => {
-										await confirm();
-									}}
-								>
+								<Button variant="destructive" size="sm" onClick={handleDelete}>
 									<Trash2 className="h-4 w-4 mr-2" />
 									Delete
 								</Button>
@@ -111,22 +106,12 @@ export default function SnippetDetail() {
 							className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-white/10 text-white hover:bg-white/20 hover:text-white border-0"
 							onClick={handleCopy}
 						>
-							{isCopied ? (
-								<>
-									<Check className="h-4 w-4 mr-2" />
-									Copied
-								</>
-							) : (
-								<>
-									<Copy className="h-4 w-4 mr-2" />
-									Copy Code
-								</>
-							)}
+							<Copy className="h-4 w-4 mr-2" />
 						</Button>
 
 						<div className="overflow-x-auto p-6 md:p-8">
 							<pre className="text-sm md:text-base font-mono leading-relaxed text-slate-50">
-								<code>{snippet.code}</code>
+								<code>{snippet.data.code}</code>
 							</pre>
 						</div>
 					</CardContent>

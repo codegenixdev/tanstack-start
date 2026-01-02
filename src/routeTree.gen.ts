@@ -9,10 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as CreateRouteImport } from './routes/create'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SnippetsCreateRouteImport } from './routes/snippets/create'
+import { Route as SnippetsFiltersRouteImport } from './routes/snippets/_filters'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoDrizzleRouteImport } from './routes/demo/drizzle'
+import { Route as SnippetsFiltersIndexRouteImport } from './routes/snippets/_filters.index'
 import { Route as SnippetsSnippetIdIndexRouteImport } from './routes/snippets/$snippetId/index'
 import { Route as SnippetsSnippetIdEditRouteImport } from './routes/snippets/$snippetId/edit'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
@@ -24,14 +26,19 @@ import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
 import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
 
-const CreateRoute = CreateRouteImport.update({
-  id: '/create',
-  path: '/create',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SnippetsCreateRoute = SnippetsCreateRouteImport.update({
+  id: '/snippets/create',
+  path: '/snippets/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SnippetsFiltersRoute = SnippetsFiltersRouteImport.update({
+  id: '/snippets/_filters',
+  path: '/snippets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
@@ -43,6 +50,11 @@ const DemoDrizzleRoute = DemoDrizzleRouteImport.update({
   id: '/demo/drizzle',
   path: '/demo/drizzle',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SnippetsFiltersIndexRoute = SnippetsFiltersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SnippetsFiltersRoute,
 } as any)
 const SnippetsSnippetIdIndexRoute = SnippetsSnippetIdIndexRouteImport.update({
   id: '/snippets/$snippetId/',
@@ -97,15 +109,17 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/create': typeof CreateRoute
   '/demo/drizzle': typeof DemoDrizzleRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/snippets': typeof SnippetsFiltersRouteWithChildren
+  '/snippets/create': typeof SnippetsCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
   '/snippets/$snippetId/edit': typeof SnippetsSnippetIdEditRoute
   '/snippets/$snippetId': typeof SnippetsSnippetIdIndexRoute
+  '/snippets/': typeof SnippetsFiltersIndexRoute
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
   '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
@@ -113,15 +127,16 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/create': typeof CreateRoute
   '/demo/drizzle': typeof DemoDrizzleRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/snippets/create': typeof SnippetsCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
   '/snippets/$snippetId/edit': typeof SnippetsSnippetIdEditRoute
   '/snippets/$snippetId': typeof SnippetsSnippetIdIndexRoute
+  '/snippets': typeof SnippetsFiltersIndexRoute
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
   '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
@@ -130,15 +145,17 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/create': typeof CreateRoute
   '/demo/drizzle': typeof DemoDrizzleRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/snippets/_filters': typeof SnippetsFiltersRouteWithChildren
+  '/snippets/create': typeof SnippetsCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
   '/snippets/$snippetId/edit': typeof SnippetsSnippetIdEditRoute
   '/snippets/$snippetId/': typeof SnippetsSnippetIdIndexRoute
+  '/snippets/_filters/': typeof SnippetsFiltersIndexRoute
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
   '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
@@ -148,15 +165,17 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/create'
     | '/demo/drizzle'
     | '/demo/tanstack-query'
+    | '/snippets'
+    | '/snippets/create'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
     | '/snippets/$snippetId/edit'
     | '/snippets/$snippetId'
+    | '/snippets/'
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
     | '/demo/start/ssr/spa-mode'
@@ -164,15 +183,16 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/create'
     | '/demo/drizzle'
     | '/demo/tanstack-query'
+    | '/snippets/create'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
     | '/snippets/$snippetId/edit'
     | '/snippets/$snippetId'
+    | '/snippets'
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
     | '/demo/start/ssr/spa-mode'
@@ -180,15 +200,17 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/create'
     | '/demo/drizzle'
     | '/demo/tanstack-query'
+    | '/snippets/_filters'
+    | '/snippets/create'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
     | '/snippets/$snippetId/edit'
     | '/snippets/$snippetId/'
+    | '/snippets/_filters/'
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
     | '/demo/start/ssr/spa-mode'
@@ -197,9 +219,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CreateRoute: typeof CreateRoute
   DemoDrizzleRoute: typeof DemoDrizzleRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
+  SnippetsFiltersRoute: typeof SnippetsFiltersRouteWithChildren
+  SnippetsCreateRoute: typeof SnippetsCreateRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoApiTqTodosRoute: typeof DemoApiTqTodosRoute
   DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
@@ -214,18 +237,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/create': {
-      id: '/create'
-      path: '/create'
-      fullPath: '/create'
-      preLoaderRoute: typeof CreateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/snippets/create': {
+      id: '/snippets/create'
+      path: '/snippets/create'
+      fullPath: '/snippets/create'
+      preLoaderRoute: typeof SnippetsCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/snippets/_filters': {
+      id: '/snippets/_filters'
+      path: '/snippets'
+      fullPath: '/snippets'
+      preLoaderRoute: typeof SnippetsFiltersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/tanstack-query': {
@@ -241,6 +271,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/demo/drizzle'
       preLoaderRoute: typeof DemoDrizzleRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/snippets/_filters/': {
+      id: '/snippets/_filters/'
+      path: '/'
+      fullPath: '/snippets/'
+      preLoaderRoute: typeof SnippetsFiltersIndexRouteImport
+      parentRoute: typeof SnippetsFiltersRoute
     }
     '/snippets/$snippetId/': {
       id: '/snippets/$snippetId/'
@@ -315,11 +352,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SnippetsFiltersRouteChildren {
+  SnippetsFiltersIndexRoute: typeof SnippetsFiltersIndexRoute
+}
+
+const SnippetsFiltersRouteChildren: SnippetsFiltersRouteChildren = {
+  SnippetsFiltersIndexRoute: SnippetsFiltersIndexRoute,
+}
+
+const SnippetsFiltersRouteWithChildren = SnippetsFiltersRoute._addFileChildren(
+  SnippetsFiltersRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CreateRoute: CreateRoute,
   DemoDrizzleRoute: DemoDrizzleRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
+  SnippetsFiltersRoute: SnippetsFiltersRouteWithChildren,
+  SnippetsCreateRoute: SnippetsCreateRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoApiTqTodosRoute: DemoApiTqTodosRoute,
   DemoStartApiRequestRoute: DemoStartApiRequestRoute,

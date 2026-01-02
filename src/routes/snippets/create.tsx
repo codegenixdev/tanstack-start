@@ -54,7 +54,9 @@ const useCreateSnippet = () => {
 	});
 };
 
-export const Route = createFileRoute("/create")({ component: CreateSnippet });
+export const Route = createFileRoute("/snippets/create")({
+	component: CreateSnippet,
+});
 
 export default function CreateSnippet() {
 	const createSnippetMutation = useCreateSnippet();
@@ -85,7 +87,7 @@ export default function CreateSnippet() {
 						</CardDescription>
 					</div>
 					<Button variant="outline" size="sm" asChild>
-						<Link to="/">
+						<Link to="..">
 							<ChevronLeft className="mr-1 h-4 w-4" />
 							Back
 						</Link>
