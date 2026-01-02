@@ -1,8 +1,14 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, PencilLine, Save } from "lucide-react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { ArrowLeft, Loader2, PencilLine, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,74 +25,82 @@ import { getSnippetQueryOptions } from "@/routes/snippets/-services/queries";
 export const Route = createFileRoute("/snippets/$snippetId/edit")({
 	component: EditSnippet,
 	loader: async ({ params, context }) => {
-		context.queryClient.prefetchQuery(getSnippetQueryOptions(params.snippetId));
+		await context.queryClient.prefetchQuery(
+			getSnippetQueryOptions(params.snippetId),
+		);
 	},
 });
 
 export default function EditSnippet() {
 	const { snippetId } = Route.useParams();
-	const updateSnippetMutation = useUpdateSnippet();
-	const snippet = useSuspenseQuery(getSnippetQueryOptions(snippetId));
-	if (!snippet.data) {
-		return "Snippet not found";
-	}
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+
+	const { data: snippet } = useSuspenseQuery(getSnippetQueryOptions(snippetId));
+
+	const updateMutation = useUpdateSnippet();
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const formData = new FormData(e.target as HTMLFormElement);
-		const title = formData.get("title") as string;
-		const language = formData.get("language") as string;
-		const code = formData.get("code") as string;
-		const description = formData.get("description") as string;
-		updateSnippetMutation.mutate({
+		const formData = new FormData(e.currentTarget);
+
+		updateMutation.mutate({
 			data: {
 				id: Number(snippetId),
-				title,
-				language,
-				code,
-				description,
+				title: formData.get("title") as string,
+				language: formData.get("language") as string,
+				code: formData.get("code") as string,
+				description: formData.get("description") as string,
 			},
 		});
 	};
+
+	if (!snippet) {
+		return <div className="p-8 text-center">Snippet not found</div>;
+	}
+
 	return (
-		<div className="p-4 md:p-8 font-sans flex items-center justify-center">
-			<Card className="w-full max-w-2xl shadow-lg">
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 border-b">
-					<div className="flex flex-col gap-1">
-						<CardTitle className="text-2xl font-bold flex items-center gap-2">
+		<div className="p-4 md:p-8 font-sans flex items-center justify-center min-h-screen bg-background">
+			<Card className="w-full max-w-3xl shadow-xl">
+				<CardHeader className="flex flex-row items-center justify-between pb-6 border-b">
+					<div>
+						<CardTitle className="text-2xl font-bold flex items-center gap-3">
 							<PencilLine className="h-6 w-6 text-orange-500" />
 							Edit Snippet
 						</CardTitle>
-						<p className="text-sm text-muted-foreground">
-							Editing{" "}
-							<span className="font-semibold text-foreground">
-								"{snippet.data.title}"
-							</span>
-						</p>
+						<CardDescription className="mt-1">
+							Editing <span className="font-semibold">"{snippet.title}"</span>
+						</CardDescription>
 					</div>
 					<Button variant="outline" size="sm" asChild>
-						<Link to="..">
-							<ArrowLeft className="mr-1 h-4 w-4" />
+						<Link to="/snippets/$snippetId" params={{ snippetId }}>
+							<ArrowLeft className="mr-2 h-4 w-4" />
 							Cancel
 						</Link>
 					</Button>
 				</CardHeader>
 
-				<CardContent className="pt-6 space-y-6">
-					<form onSubmit={handleSubmit}>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<CardContent className="pt-8">
+					<form onSubmit={handleSubmit} className="space-y-8">
+						{/* Title + Language */}
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 							<div className="space-y-2">
 								<Label htmlFor="title">Title</Label>
 								<Input
-									defaultValue={snippet.data.title}
+									name="title"
+									defaultValue={snippet.title}
+									required
 									className="bg-background"
 								/>
 							</div>
 
 							<div className="space-y-2">
 								<Label htmlFor="language">Language</Label>
-								<Select defaultValue={snippet.data.language}>
-									<SelectTrigger className="bg-background">
-										<SelectValue placeholder="Select language" />
+								<Select
+									name="language"
+									defaultValue={snippet.language}
+									required
+								>
+									<SelectTrigger name="language">
+										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="typescript">TypeScript</SelectItem>
@@ -99,31 +113,53 @@ export default function EditSnippet() {
 							</div>
 						</div>
 
+						{/* Code */}
 						<div className="space-y-2">
 							<Label htmlFor="code">Code</Label>
-							<div className="relative">
-								<Textarea
-									defaultValue={snippet.data.code}
-									className="min-h-[300px] font-mono text-sm bg-slate-950 text-slate-50 border-slate-800 focus-visible:ring-orange-500"
-								/>
-
-								<Input
-									className="mt-3"
-									name="description"
-									defaultValue={snippet.data.description || ""}
-								/>
-							</div>
+							<Textarea
+								name="code"
+								defaultValue={snippet.code}
+								required
+								className="min-h-[300px] font-mono text-sm bg-slate-950 text-slate-50 resize-y focus-visible:ring-orange-500"
+								placeholder="// Your code here..."
+							/>
 						</div>
 
-						<div className="flex justify-end gap-3 pt-2">
-							<input type="hidden" name="id" value={snippet.data.id} />
+						{/* Description */}
+						<div className="space-y-2">
+							<Label htmlFor="description">Description (optional)</Label>
+							<Input
+								name="description"
+								defaultValue={snippet.description || ""}
+								placeholder="Briefly describe what this snippet does..."
+								className="bg-background"
+							/>
+						</div>
 
-							<Button variant="ghost" type="button" asChild>
-								<Link to="..">Cancel</Link>
+						{/* Actions */}
+						<div className="flex justify-end gap-4 pt-6 border-t">
+							<Button type="button" variant="ghost" asChild>
+								<Link to="/snippets/$snippetId" params={{ snippetId }}>
+									Cancel
+								</Link>
 							</Button>
-							<Button type="submit" className="min-w-[150px]">
-								<Save className="mr-2 h-4 w-4" />
-								Update Changes
+
+							<Button
+								type="submit"
+								disabled={updateMutation.isPending}
+								className="min-w-[140px]"
+							>
+								{updateMutation.isPending ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Updating...
+									</>
+								) : (
+									<>
+										<Save className="mr-2 h-4 w-4" />
+										Save Changes
+									</>
+								)}
 							</Button>
 						</div>
 					</form>

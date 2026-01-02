@@ -36,20 +36,15 @@ const createSnippet = createServerFn({
 
 const useCreateSnippet = () => {
 	const router = useRouter();
-
 	return useMutation({
-		mutationFn: (data: {
-			title: string;
-			language: string;
-			code: string;
-			description: string;
-		}) => createSnippet({ data }),
+		mutationFn: createSnippet,
 		onSuccess: () => {
 			toast.success("Snippet created successfully");
 			router.invalidate();
+			router.navigate({ to: ".." });
 		},
 		onError: () => {
-			toast.error("Error during creating snippet");
+			toast.error("Failed to create snippet");
 		},
 	});
 };
@@ -59,58 +54,61 @@ export const Route = createFileRoute("/snippets/create")({
 });
 
 export default function CreateSnippet() {
-	const createSnippetMutation = useCreateSnippet();
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+	const mutation = useCreateSnippet();
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const formData = new FormData(e.target as HTMLFormElement);
-		const title = formData.get("title") as string;
-		const language = formData.get("language") as string;
-		const code = formData.get("code") as string;
-		const description = formData.get("description") as string;
-		createSnippetMutation.mutate({
-			title,
-			language,
-			code,
-			description,
-		});
+		const formData = new FormData(e.currentTarget);
+
+		const data = {
+			title: formData.get("title") as string,
+			language: formData.get("language") as string,
+			code: formData.get("code") as string,
+			description: formData.get("description") as string,
+		};
+
+		mutation.mutate({ data });
 	};
+
 	return (
-		<div className="p-4 md:p-8 font-sans flex items-center justify-center">
-			<Card className="w-full max-w-2xl shadow-lg">
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 border-b">
-					<div className="flex flex-col gap-1">
-						<CardTitle className="text-2xl font-bold flex items-center gap-2">
-							Add Snippet
+		<div className="p-4 md:p-8 font-sans flex items-center justify-center min-h-screen bg-background">
+			<Card className="w-full max-w-3xl shadow-xl">
+				<CardHeader className="flex flex-row items-center justify-between pb-6 border-b">
+					<div>
+						<CardTitle className="text-2xl font-bold">
+							Create New Snippet
 						</CardTitle>
-						<CardDescription>
-							Save a reusable code block to your personal library.
+						<CardDescription className="mt-1">
+							Save a reusable code snippet to your library.
 						</CardDescription>
 					</div>
 					<Button variant="outline" size="sm" asChild>
 						<Link to="..">
-							<ChevronLeft className="mr-1 h-4 w-4" />
+							<ChevronLeft className="mr-2 h-4 w-4" />
 							Back
 						</Link>
 					</Button>
 				</CardHeader>
 
-				<CardContent className="pt-6 space-y-6">
-					<form onSubmit={handleSubmit}>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<CardContent className="pt-8">
+					<form onSubmit={handleSubmit} className="space-y-8">
+						{/* Title + Language */}
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 							<div className="space-y-2">
 								<Label htmlFor="title">Title</Label>
 								<Input
 									name="title"
 									placeholder="e.g., React Auth Hook"
+									required
 									className="bg-background"
 								/>
 							</div>
 
 							<div className="space-y-2">
 								<Label htmlFor="language">Language</Label>
-								<Select name="language">
-									<SelectTrigger className="bg-background">
-										<SelectValue placeholder="Select language" />
+								<Select name="language" required>
+									<SelectTrigger name="language">
+										<SelectValue placeholder="Select a language" />
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="typescript">TypeScript</SelectItem>
@@ -123,33 +121,49 @@ export default function CreateSnippet() {
 							</div>
 						</div>
 
+						{/* Code */}
 						<div className="space-y-2">
 							<Label htmlFor="code">Code</Label>
-							<div className="relative">
-								<Textarea
-									name="code"
-									placeholder="// Paste your code here..."
-									className="min-h-[300px] font-mono text-sm bg-slate-950 text-slate-50 border-slate-800 placeholder:text-slate-500 resize-y"
-								/>
-								<Input
-									className="bg-background mt-3"
-									name="description"
-									placeholder="Description..."
-								/>
-							</div>
+							<Textarea
+								name="code"
+								placeholder="// Paste or write your code here..."
+								className="min-h-[300px] font-mono text-sm bg-slate-950 text-slate-50 resize-y"
+								required
+							/>
 						</div>
 
-						<div className="flex justify-end gap-3 pt-2">
-							<Button variant="ghost" type="button" asChild>
+						{/* Description */}
+						<div className="space-y-2">
+							<Label htmlFor="description">Description (optional)</Label>
+							<Input
+								name="description"
+								placeholder="Briefly describe what this snippet does..."
+								className="bg-background"
+							/>
+						</div>
+
+						{/* Actions */}
+						<div className="flex justify-end gap-4 pt-6 border-t">
+							<Button type="button" variant="ghost" asChild>
 								<Link to="..">Cancel</Link>
 							</Button>
-							<Button type="submit" className="min-w-[120px]">
-								{createSnippetMutation.isPending ? (
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+
+							<Button
+								type="submit"
+								disabled={mutation.isPending}
+								className="min-w-[140px]"
+							>
+								{mutation.isPending ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Saving...
+									</>
 								) : (
-									<Save className="mr-2 h-4 w-4" />
+									<>
+										<Save className="mr-2 h-4 w-4" />
+										Save Snippet
+									</>
 								)}
-								Save Snippet
 							</Button>
 						</div>
 					</form>

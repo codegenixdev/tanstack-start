@@ -1,11 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-	createFileRoute,
-	Link,
-	notFound,
-	redirect,
-	useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Calendar, Copy, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +24,7 @@ export default function SnippetDetail() {
 
 	if (!snippet.data) {
 		navigate({ to: "/snippets" });
+		return;
 	}
 
 	const handleCopy = () => {
@@ -37,7 +32,8 @@ export default function SnippetDetail() {
 	};
 
 	const handleDelete = async () => {
-		await confirm();
+		const isConfirmed = await confirm();
+		if (!isConfirmed) return;
 		deleteSnippetMutation.mutate(Number(snippet.data?.id));
 	};
 

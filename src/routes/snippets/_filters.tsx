@@ -81,7 +81,7 @@ function Filters() {
 					</div>
 					<div className="w-full md:w-[200px]">
 						<Select value={language} onValueChange={handleLanguageChange}>
-							<SelectTrigger>
+							<SelectTrigger className="w-full">
 								<SelectValue placeholder="All Languages" />
 							</SelectTrigger>
 							<SelectContent>
@@ -90,6 +90,7 @@ function Filters() {
 								<SelectItem value="javascript">JavaScript</SelectItem>
 								<SelectItem value="python">Python</SelectItem>
 								<SelectItem value="css">CSS</SelectItem>
+								<SelectItem value="sql">SQL</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>

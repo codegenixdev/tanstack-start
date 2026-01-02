@@ -32,21 +32,21 @@ export const updateSnippet = createServerFn({
 	method: "POST",
 })
 	.inputValidator(updateSnippetSchema)
-	.handler(async ({ params }) => {
-		await db.update(snippets).set(params).where(eq(snippets.id, params.id));
+	.handler(async ({ data }) => {
+		await db.update(snippets).set(data).where(eq(snippets.id, data.id));
 		return { success: true };
 	});
 
 export const useUpdateSnippet = () => {
 	const router = useRouter();
 	return useMutation({
-		mutationFn: (data: typeof updateSnippetSchema.shape) =>
-			updateSnippet({ data }),
+		mutationFn: (data: typeof updateSnippetSchema.shape) => updateSnippet(data),
 		onSuccess: () => {
 			toast.success("Snippet updated successfully");
 			router.invalidate();
 		},
-		onError: () => {
+		onError: (error) => {
+			console.log(error);
 			toast.error("Error updating snippet");
 		},
 	});
