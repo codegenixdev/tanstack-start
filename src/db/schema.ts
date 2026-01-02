@@ -1,12 +1,22 @@
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core'
-import { sql } from 'drizzle-orm'
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { createSelectSchema } from "drizzle-zod";
 
-export const todos = sqliteTable('todos', {
-  id: integer({ mode: 'number' }).primaryKey({
-    autoIncrement: true,
-  }),
-  title: text().notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).default(
-    sql`(unixepoch())`,
-  ),
-})
+export const snippets = sqliteTable("snippets", {
+	id: integer("id").primaryKey({ autoIncrement: true }),
+	title: text("title").notNull(),
+	language: text("language").notNull(),
+	code: text("code").notNull(),
+	description: text("description"),
+	createdAt: text("created_at").notNull().default(new Date().toISOString()),
+});
+
+export const createSnippetSchema = createSelectSchema(snippets, {
+	createdAt: (schema) => schema.optional(),
+	description: (schema) => schema.optional(),
+	id: (schema) => schema.optional(),
+});
+
+export const updateSnippetSchema = createSelectSchema(snippets, {
+	createdAt: (schema) => schema.optional(),
+	description: (schema) => schema.optional(),
+});

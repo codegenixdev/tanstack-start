@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
+import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "../components/navbar";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
@@ -49,6 +50,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<body>
 				<ConfirmProvider>
 					<div className="max-w-6xl mx-auto">
+						<Toaster />
 						<Navbar />
 						{children}
 						<TanStackDevtools

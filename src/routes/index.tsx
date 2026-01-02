@@ -1,6 +1,20 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, Code2, Copy, Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { useState } from "react";
+import {
+	queryOptions,
+	useMutation,
+	useSuspenseQuery,
+} from "@tanstack/react-query";
+import {
+	createFileRoute,
+	Link,
+	useNavigate,
+	useRouter,
+} from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import { and, eq, type InferSelectModel, like, or } from "drizzle-orm";
+import { Check, Copy, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod/v4";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,11 +34,91 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { mockSnippets } from "@/routes/-lib/mock";
+import { Skeleton } from "@/components/ui/skeleton";
+import { db } from "@/db";
+import { snippets } from "@/db/schema";
 
-export const Route = createFileRoute("/")({ component: App });
+const getSnippets = createServerFn({
+	method: "GET",
+})
+	.inputValidator((data: { search: string; language: string }) => data)
+	.handler(async ({ data }) => {
+		const conditions = [];
 
-function App() {
+		if (data?.search?.trim()) {
+			const likePattern = `%${data.search.trim()}%`;
+			conditions.push(
+				or(
+					like(snippets.title, likePattern),
+					like(snippets.description, likePattern),
+				),
+			);
+		}
+
+		if (data?.language && data.language !== "all") {
+			conditions.push(eq(snippets.language, data.language));
+		}
+
+		if (conditions.length === 0) {
+			return await db.query.snippets.findMany();
+		}
+
+		return await db.query.snippets.findMany({
+			where: conditions.length > 1 ? and(...conditions) : conditions[0],
+		});
+	});
+
+const deleteSnippet = createServerFn({
+	method: "POST",
+}).handler(async ({ data }) => {
+	await db.delete(snippets).where(eq(snippets.id, data.id));
+	return { success: true };
+});
+
+const useDeleteSnippet = () => {
+	const router = useRouter();
+	return useMutation({
+		mutationFn: (id: number) => deleteSnippet({ data: { id } }),
+		onSuccess: () => {
+			toast.success("Snippet deleted successfully");
+			router.invalidate();
+		},
+		onError: () => {
+			toast.error("Error deleting snippet");
+		},
+	});
+};
+
+export const snippetsQueryOptions = (
+	search: string = "",
+	language: string = "all",
+) =>
+	queryOptions({
+		queryKey: ["snippets", search, language],
+		queryFn: () => getSnippets({ data: { search, language } }),
+	});
+
+export const searchSchema = z.object({
+	search: z.string().default("").catch(""),
+	language: z.string().default("all").catch("all"),
+});
+
+export const Route = createFileRoute("/")({
+	component: App,
+	loader: async ({ context, deps: { search } }) => {
+		context.queryClient.prefetchQuery(
+			snippetsQueryOptions(search.search, search.language),
+		);
+	},
+	validateSearch: searchSchema,
+	loaderDeps: ({ search }) => ({ search }),
+	pendingComponent: SkeletonLoader,
+	errorComponent: () => <div>Error</div>,
+});
+
+export type Snippet = InferSelectModel<typeof snippets>;
+
+function SkeletonLoader() {
 	return (
 		<div className="min-h-screen p-4 md:p-8 font-sans">
 			<div className="mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -36,7 +130,103 @@ function App() {
 						Manage and search your code snippets efficiently.
 					</p>
 				</div>
+				<Button size="lg" className="shadow-sm" asChild>
+					<Link to="/create">
+						<Plus className="mr-2 h-4 w-4" /> New Snippet
+					</Link>
+				</Button>
+			</div>
 
+			<div className="mx-auto mb-8">
+				<div className="bg-background rounded-lg border shadow-sm p-4 flex flex-col md:flex-row gap-4">
+					<div className="relative flex-1">
+						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+					<div className="w-full md:w-[200px]">
+						<Skeleton className="h-10 w-full" />
+					</div>
+				</div>
+			</div>
+
+			<div className="mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				{[...Array(6)].map((_, i) => (
+					<SkeletonCard key={i} />
+				))}
+			</div>
+		</div>
+	);
+}
+
+function SkeletonCard() {
+	return (
+		<Card className="flex flex-col">
+			<CardHeader className="pb-3">
+				<div className="flex justify-between items-start gap-2">
+					<Skeleton className="h-6 w-3/4" />
+					<Skeleton className="h-5 w-16" />
+				</div>
+				<Skeleton className="h-4 w-full mt-2" />
+			</CardHeader>
+			<CardContent className="flex-1 pb-3">
+				<div className="bg-slate-950 rounded-md p-3 h-24">
+					<Skeleton className="h-3 w-full mb-2 bg-slate-800" />
+					<Skeleton className="h-3 w-5/6 mb-2 bg-slate-800" />
+					<Skeleton className="h-3 w-4/6 bg-slate-800" />
+				</div>
+			</CardContent>
+			<CardFooter className="pt-2 flex justify-between border-t bg-muted/20">
+				<Skeleton className="h-8 w-20" />
+				<div className="flex gap-1">
+					<Skeleton className="h-8 w-8" />
+					<Skeleton className="h-8 w-8" />
+				</div>
+			</CardFooter>
+		</Card>
+	);
+}
+
+function App() {
+	const { search, language } = Route.useSearch();
+	const navigate = useNavigate();
+	const snippetsQuery = useSuspenseQuery(
+		snippetsQueryOptions(search, language),
+	);
+	const [searchInput, setSearchInput] = useState(search);
+
+	useEffect(() => {
+		setSearchInput(search);
+	}, [search]);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			if (searchInput !== search) {
+				navigate({
+					search: { search: searchInput, language },
+				});
+			}
+		}, 300);
+
+		return () => clearTimeout(timer);
+	}, [searchInput, language]);
+
+	const handleLanguageChange = (value: string) => {
+		navigate({
+			search: { search, language: value },
+		});
+	};
+
+	return (
+		<div className="min-h-screen p-4 md:p-8 font-sans">
+			<div className="mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+				<div>
+					<h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+						Snippets
+					</h1>
+					<p className="text-muted-foreground mt-1">
+						Manage and search your code snippets efficiently.
+					</p>
+				</div>
 				<Button size="lg" className="shadow-sm" asChild>
 					<Link to="/create">
 						<Plus className="mr-2 h-4 w-4" /> New Snippet
@@ -50,12 +240,14 @@ function App() {
 						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 						<Input
 							type="search"
-							placeholder="Search by title..."
+							placeholder="Search by title or description..."
 							className="pl-9 w-full bg-muted/50"
+							value={searchInput}
+							onChange={(e) => setSearchInput(e.target.value)}
 						/>
 					</div>
 					<div className="w-full md:w-[200px]">
-						<Select>
+						<Select value={language} onValueChange={handleLanguageChange}>
 							<SelectTrigger>
 								<SelectValue placeholder="All Languages" />
 							</SelectTrigger>
@@ -72,15 +264,18 @@ function App() {
 			</div>
 
 			<div className="mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{mockSnippets.map((snippet) => (
+				{snippetsQuery.data.map((snippet) => (
 					<SnippetCard key={snippet.id} snippet={snippet} />
 				))}
 			</div>
 
-			{mockSnippets.length === 0 && (
+			{snippetsQuery.data.length === 0 && (
 				<div className="text-center py-20">
 					<p className="text-muted-foreground">
-						No snippets found. Create your first one!
+						No snippets found.{" "}
+						{search || language !== "all"
+							? "Try adjusting your filters."
+							: "Create your first one!"}
 					</p>
 				</div>
 			)}
@@ -88,7 +283,8 @@ function App() {
 	);
 }
 
-function SnippetCard({ snippet }: { snippet: (typeof mockSnippets)[0] }) {
+function SnippetCard({ snippet }: { snippet: Snippet }) {
+	const deleteSnippetMutation = useDeleteSnippet();
 	const confirm = useConfirm();
 	const [isCopied, setIsCopied] = useState(false);
 
@@ -112,7 +308,7 @@ function SnippetCard({ snippet }: { snippet: (typeof mockSnippets)[0] }) {
 		});
 
 		if (shouldDelete) {
-			console.log("Deleted snippet:", snippet.id);
+			deleteSnippetMutation.mutate(snippet.id);
 		}
 	};
 
@@ -136,7 +332,6 @@ function SnippetCard({ snippet }: { snippet: (typeof mockSnippets)[0] }) {
 						{snippet.description}
 					</CardDescription>
 				</CardHeader>
-
 				<CardContent className="flex-1 pb-3">
 					<div className="bg-slate-950 rounded-md p-3 overflow-hidden relative">
 						<div className="absolute inset-0 bg-linear-to-b from-transparent to-slate-950/90 pointer-events-none" />
@@ -146,7 +341,6 @@ function SnippetCard({ snippet }: { snippet: (typeof mockSnippets)[0] }) {
 					</div>
 				</CardContent>
 			</Link>
-
 			<CardFooter className="pt-2 flex justify-between border-t bg-muted/20">
 				<Button
 					variant="ghost"
@@ -168,7 +362,6 @@ function SnippetCard({ snippet }: { snippet: (typeof mockSnippets)[0] }) {
 						</>
 					)}
 				</Button>
-
 				<div className="flex gap-1">
 					<Button
 						variant="ghost"

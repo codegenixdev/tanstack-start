@@ -1,23 +1,41 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-
-export const Route = createFileRoute("/snippets/$snippetId/")({
-	component: SnippetDetail,
-});
-
+import { createServerFn } from "@tanstack/react-start";
+import { eq } from "drizzle-orm";
 import { ArrowLeft, Calendar, Check, Copy, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { mockSnippet } from "@/routes/-lib/mock";
+import { db } from "@/db";
+import { snippets } from "@/db/schema";
+
+export const getSnippet = createServerFn({ method: "GET" })
+	.inputValidator((params: { snippetId: string }) => params)
+	.handler(async ({ data }) => {
+		return await db.query.snippets.findFirst({
+			where: eq(snippets.id, Number(data.snippetId)),
+		});
+	});
+
+export const Route = createFileRoute("/snippets/$snippetId/")({
+	component: SnippetDetail,
+	loader: async ({ params }) => {
+		return await getSnippet({ data: { snippetId: params.snippetId } });
+	},
+});
 
 export default function SnippetDetail() {
+	const snippet = Route.useLoaderData();
 	const [isCopied, setIsCopied] = useState(false);
 	const confirm = useConfirm();
 
+	if (!snippet) {
+		return "Snippet not found";
+	}
+
 	const handleCopy = () => {
-		navigator.clipboard.writeText(mockSnippet.code);
+		navigator.clipboard.writeText(snippet.code);
 		setIsCopied(true);
 		setTimeout(() => setIsCopied(false), 2000);
 	};
@@ -45,18 +63,18 @@ export default function SnippetDetail() {
 							<div className="space-y-3">
 								<div className="flex items-center gap-3">
 									<h1 className="text-3xl font-bold text-foreground">
-										{mockSnippet.title}
+										{snippet.title}
 									</h1>
 									<Badge
 										variant="outline"
 										className="text-sm px-3 py-1 uppercase tracking-wide"
 									>
-										{mockSnippet.language}
+										{snippet.language}
 									</Badge>
 								</div>
 								<div className="flex items-center text-sm text-muted-foreground gap-2">
 									<Calendar className="h-4 w-4" />
-									<span>Created on {mockSnippet.date}</span>
+									<span>Created on {snippet.createdAt}</span>
 								</div>
 							</div>
 
@@ -65,7 +83,7 @@ export default function SnippetDetail() {
 									<Link
 										to="/snippets/$snippetId/edit"
 										params={{
-											snippetId: mockSnippet.id,
+											snippetId: snippet.id.toString(),
 										}}
 									>
 										<Pencil className="h-4 w-4 mr-2" />
@@ -108,7 +126,7 @@ export default function SnippetDetail() {
 
 						<div className="overflow-x-auto p-6 md:p-8">
 							<pre className="text-sm md:text-base font-mono leading-relaxed text-slate-50">
-								<code>{mockSnippet.code}</code>
+								<code>{snippet.code}</code>
 							</pre>
 						</div>
 					</CardContent>
