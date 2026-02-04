@@ -1,13 +1,14 @@
 import { queryOptions } from "@tanstack/react-query";
-import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq, like, or } from "drizzle-orm";
 import { db } from "@/db";
 import { snippets } from "@/db/schema";
+import { loggerMiddleware } from "@/middleware/logger";
 
 const getSnippets = createServerFn({
 	method: "GET",
 })
+	.middleware([loggerMiddleware])
 	.inputValidator((data: { search: string; language: string }) => data)
 	.handler(async ({ data }) => {
 		const conditions = [];

@@ -9,6 +9,7 @@ import { snippets, updateSnippetSchema } from "@/db/schema";
 export const deleteSnippet = createServerFn({
 	method: "POST",
 }).handler(async ({ data }) => {
+	console.log("data", data);
 	await db.delete(snippets).where(eq(snippets.id, data.id));
 	return { success: true };
 });

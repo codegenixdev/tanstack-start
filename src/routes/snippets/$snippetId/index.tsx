@@ -1,11 +1,21 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+	ClientOnly,
+	createFileRoute,
+	Link,
+	useHydrated,
+	useNavigate,
+	useRouter,
+} from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Calendar, Copy, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { useDeleteSnippet } from "@/routes/snippets/-services/mutations";
+import { copyToClipboard } from "@/routes/-lib/client-actions";
+import { deleteSnippet } from "@/routes/snippets/-services/mutations";
 import { getSnippetQueryOptions } from "@/routes/snippets/-services/queries";
 
 export const Route = createFileRoute("/snippets/$snippetId/")({
@@ -17,24 +27,30 @@ export const Route = createFileRoute("/snippets/$snippetId/")({
 
 export default function SnippetDetail() {
 	const { snippetId } = Route.useParams();
+	const router = useRouter();
 	const navigate = useNavigate();
 	const snippet = useSuspenseQuery(getSnippetQueryOptions(snippetId));
-	const deleteSnippetMutation = useDeleteSnippet();
+	const deleteFn = useServerFn(deleteSnippet);
+
 	const confirm = useConfirm();
+	const isHydrated = useHydrated();
 
 	if (!snippet.data) {
 		navigate({ to: "/snippets" });
 		return;
 	}
 
-	const handleCopy = () => {
-		navigator.clipboard.writeText(snippet.data?.code ?? "");
+	const handleCopy = async () => {
+		await copyToClipboard(snippet.data?.code ?? "");
 	};
 
 	const handleDelete = async () => {
 		const isConfirmed = await confirm();
 		if (!isConfirmed) return;
-		deleteSnippetMutation.mutate(Number(snippet.data?.id));
+		await deleteFn({ data: { id: snippetId } });
+		toast.success("Snippet deleted successfully");
+		router.navigate({ to: "/snippets" });
+		router.invalidate();
 	};
 
 	return (
@@ -76,21 +92,29 @@ export default function SnippetDetail() {
 							</div>
 
 							<div className="flex items-center gap-2">
-								<Button variant="outline" size="sm" asChild>
-									<Link
-										to="/snippets/$snippetId/edit"
-										params={{
-											snippetId: snippet.data.id.toString(),
-										}}
+								<ClientOnly fallback={<p>Waiting to be hydrated...</p>}>
+									<Button variant="outline" size="sm" asChild>
+										<Link
+											to="/snippets/$snippetId/edit"
+											params={{
+												snippetId: snippet.data.id.toString(),
+											}}
+										>
+											<Pencil className="h-4 w-4 mr-2" />
+											Edit
+										</Link>
+									</Button>
+								</ClientOnly>
+								{isHydrated && (
+									<Button
+										variant="destructive"
+										size="sm"
+										onClick={handleDelete}
 									>
-										<Pencil className="h-4 w-4 mr-2" />
-										Edit
-									</Link>
-								</Button>
-								<Button variant="destructive" size="sm" onClick={handleDelete}>
-									<Trash2 className="h-4 w-4 mr-2" />
-									Delete
-								</Button>
+										<Trash2 className="h-4 w-4 mr-2" />
+										Delete
+									</Button>
+								)}
 							</div>
 						</div>
 					</CardHeader>

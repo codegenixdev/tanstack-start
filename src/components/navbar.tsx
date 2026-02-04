@@ -7,7 +7,7 @@ export function Navbar() {
 			<div className="mx-auto flex h-14 items-center justify-between">
 				<Link to="/" className="flex items-center gap-2 font-bold text-lg">
 					<Code2 className="h-5 w-5 text-primary" />
-					<span>SnippetBox</span>
+					<span>{import.meta.env.VITE_APP_NAME}</span>
 				</Link>
 			</div>
 		</nav>

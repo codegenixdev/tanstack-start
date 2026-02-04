@@ -9,6 +9,15 @@ import {
 } from "@/components/ui/card";
 
 export const Route = createFileRoute("/")({
+	head: () => ({
+		meta: [
+			{ title: "SnippetBox - Manage Your Code Snippets" },
+			{
+				name: "description",
+				content: "A simple code snippet manager built with TanStack Start",
+			},
+		],
+	}),
 	component: RouteComponent,
 });
 

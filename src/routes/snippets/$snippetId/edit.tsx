@@ -1,5 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	notFound,
+	useRouter,
+} from "@tanstack/react-router";
 import { ArrowLeft, Loader2, PencilLine, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +59,7 @@ export default function EditSnippet() {
 	};
 
 	if (!snippet) {
+		// throw notFound();
 		return <div className="p-8 text-center">Snippet not found</div>;
 	}
 

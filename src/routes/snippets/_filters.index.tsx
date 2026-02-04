@@ -14,11 +14,13 @@ import {
 } from "@/components/ui/card";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import type { Snippet } from "@/db/schema";
+import { copyToClipboard } from "@/routes/-lib/client-actions";
 import { useDeleteSnippet } from "@/routes/snippets/-services/mutations";
 import { snippetsQueryOptions } from "@/routes/snippets/-services/queries";
 
 export const Route = createFileRoute("/snippets/_filters/")({
 	component: Snippets,
+	// show that what isomorphic mean
 	loader: async ({ context, deps: { search } }) => {
 		context.queryClient.prefetchQuery(
 			snippetsQueryOptions(search.search, search.language),
@@ -63,7 +65,7 @@ function SnippetCard({ snippet }: { snippet: Snippet }) {
 
 	const handleCopy = async () => {
 		try {
-			await navigator.clipboard.writeText(snippet.code);
+			await copyToClipboard(snippet.code);
 			setIsCopied(true);
 			setTimeout(() => setIsCopied(false), 2000);
 		} catch (err) {
