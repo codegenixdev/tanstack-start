@@ -40,7 +40,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	}),
 
 	shellComponent: RootDocument,
-	errorComponent: () => <div>Global Error</div>,
+	errorComponent: (e) => {
+		console.log("e", e);
+		return <div>Global Error</div>;
+	},
 	notFoundComponent: () => {
 		throw redirect({ to: "/" });
 		// return <div>Global Not Found</div>;
