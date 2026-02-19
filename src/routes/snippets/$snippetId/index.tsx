@@ -1,4 +1,3 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	ClientOnly,
 	createFileRoute,
@@ -7,47 +6,38 @@ import {
 	useNavigate,
 	useRouter,
 } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Calendar, Copy, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { copyToClipboard } from "@/routes/-lib/client-actions";
-import { deleteSnippet } from "@/routes/snippets/-services/mutations";
-import { getSnippetQueryOptions } from "@/routes/snippets/-services/queries";
+import { mockSnippet } from "@/routes/-lib/mock";
 
 export const Route = createFileRoute("/snippets/$snippetId/")({
 	component: SnippetDetail,
-	loader: ({ context, params }) => {
-		context.queryClient.prefetchQuery(getSnippetQueryOptions(params.snippetId));
-	},
 });
 
 export default function SnippetDetail() {
-	const { snippetId } = Route.useParams();
 	const router = useRouter();
 	const navigate = useNavigate();
-	const snippet = useSuspenseQuery(getSnippetQueryOptions(snippetId));
-	const deleteFn = useServerFn(deleteSnippet);
 
 	const confirm = useConfirm();
 	const isHydrated = useHydrated();
 
-	if (!snippet.data) {
+	if (!mockSnippet) {
 		navigate({ to: "/snippets" });
 		return;
 	}
 
 	const handleCopy = async () => {
-		await copyToClipboard(snippet.data?.code ?? "");
+		// implement copy
 	};
 
 	const handleDelete = async () => {
 		const isConfirmed = await confirm();
 		if (!isConfirmed) return;
-		await deleteFn({ data: { id: snippetId } });
+		// implement delete
 		toast.success("Snippet deleted successfully");
 		router.navigate({ to: "/snippets" });
 		router.invalidate();
@@ -76,18 +66,18 @@ export default function SnippetDetail() {
 							<div className="space-y-3">
 								<div className="flex items-center gap-3">
 									<h1 className="text-3xl font-bold text-foreground">
-										{snippet.data.title}
+										{mockSnippet.title}
 									</h1>
 									<Badge
 										variant="outline"
 										className="text-sm px-3 py-1 uppercase tracking-wide"
 									>
-										{snippet.data.language}
+										{mockSnippet.language}
 									</Badge>
 								</div>
 								<div className="flex items-center text-sm text-muted-foreground gap-2">
 									<Calendar className="h-4 w-4" />
-									<span>Created on {snippet.data.createdAt}</span>
+									<span>Created on {mockSnippet.createdAt}</span>
 								</div>
 							</div>
 
@@ -97,7 +87,7 @@ export default function SnippetDetail() {
 										<Link
 											to="/snippets/$snippetId/edit"
 											params={{
-												snippetId: snippet.data.id.toString(),
+												snippetId: mockSnippet.id.toString(),
 											}}
 										>
 											<Pencil className="h-4 w-4 mr-2" />
@@ -131,7 +121,7 @@ export default function SnippetDetail() {
 
 						<div className="overflow-x-auto p-6 md:p-8">
 							<pre className="text-sm md:text-base font-mono leading-relaxed text-slate-50">
-								<code>{snippet.data.code}</code>
+								<code>{mockSnippet.code}</code>
 							</pre>
 						</div>
 					</CardContent>

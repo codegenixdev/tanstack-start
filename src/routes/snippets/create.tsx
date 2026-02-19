@@ -1,8 +1,5 @@
-import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { ChevronLeft, Loader2, Save } from "lucide-react";
-import { toast } from "sonner";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ChevronLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -21,53 +18,15 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { db } from "@/db";
-import { createSnippetSchema, snippets } from "@/db/schema";
-
-const createSnippet = createServerFn({
-	method: "POST",
-})
-	.inputValidator(createSnippetSchema)
-	.handler(async ({ data }) => {
-		await new Promise((resolve) => setTimeout(resolve, 1000));
-		await db.insert(snippets).values(data);
-		return { success: true };
-	});
-
-const useCreateSnippet = () => {
-	const router = useRouter();
-	return useMutation({
-		mutationFn: createSnippet,
-		onSuccess: () => {
-			toast.success("Snippet created successfully");
-			router.invalidate();
-			router.navigate({ to: ".." });
-		},
-		onError: () => {
-			toast.error("Failed to create snippet");
-		},
-	});
-};
 
 export const Route = createFileRoute("/snippets/create")({
 	component: CreateSnippet,
 });
 
 export default function CreateSnippet() {
-	const mutation = useCreateSnippet();
-
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const formData = new FormData(e.currentTarget);
-
-		const data = {
-			title: formData.get("title") as string,
-			language: formData.get("language") as string,
-			code: formData.get("code") as string,
-			description: formData.get("description") as string,
-		};
-
-		mutation.mutate({ data });
+		// const formData = new FormData(e.currentTarget);
 	};
 
 	return (
@@ -148,22 +107,9 @@ export default function CreateSnippet() {
 								<Link to="..">Cancel</Link>
 							</Button>
 
-							<Button
-								type="submit"
-								disabled={mutation.isPending}
-								className="min-w-[140px]"
-							>
-								{mutation.isPending ? (
-									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Saving...
-									</>
-								) : (
-									<>
-										<Save className="mr-2 h-4 w-4" />
-										Save Snippet
-									</>
-								)}
+							<Button type="submit" className="min-w-[140px]">
+								<Save className="mr-2 h-4 w-4" />
+								Save Snippet
 							</Button>
 						</div>
 					</form>

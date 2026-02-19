@@ -34,6 +34,8 @@ export const mockSnippet = {
 	title: "React UseAuth Hook",
 	language: "typescript",
 	date: "Oct 24, 2024",
+	createdAt: "2024-10-14T00:00:00.000Z",
+	description: "A simple custom hook for handling authentication context.",
 	code: `export const useAuth = () => {
   const context = useContext(AuthContext);
   

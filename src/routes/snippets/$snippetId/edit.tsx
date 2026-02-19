@@ -1,11 +1,5 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
-import {
-	createFileRoute,
-	Link,
-	notFound,
-	useRouter,
-} from "@tanstack/react-router";
-import { ArrowLeft, Loader2, PencilLine, Save } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft, PencilLine, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -24,41 +18,22 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useUpdateSnippet } from "@/routes/snippets/-services/mutations";
-import { getSnippetQueryOptions } from "@/routes/snippets/-services/queries";
+import { mockSnippet } from "@/routes/-lib/mock";
 
 export const Route = createFileRoute("/snippets/$snippetId/edit")({
 	component: EditSnippet,
-	loader: async ({ params, context }) => {
-		await context.queryClient.prefetchQuery(
-			getSnippetQueryOptions(params.snippetId),
-		);
-	},
 });
 
 export default function EditSnippet() {
 	const { snippetId } = Route.useParams();
 
-	const { data: snippet } = useSuspenseQuery(getSnippetQueryOptions(snippetId));
-
-	const updateMutation = useUpdateSnippet();
-
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const formData = new FormData(e.currentTarget);
-
-		updateMutation.mutate({
-			data: {
-				id: Number(snippetId),
-				title: formData.get("title") as string,
-				language: formData.get("language") as string,
-				code: formData.get("code") as string,
-				description: formData.get("description") as string,
-			},
-		});
+		// const formData = new FormData(e.currentTarget);
+		// implement updating
 	};
 
-	if (!snippet) {
+	if (!mockSnippet) {
 		// throw notFound();
 		return <div className="p-8 text-center">Snippet not found</div>;
 	}
@@ -73,7 +48,8 @@ export default function EditSnippet() {
 							Edit Snippet
 						</CardTitle>
 						<CardDescription className="mt-1">
-							Editing <span className="font-semibold">"{snippet.title}"</span>
+							Editing{" "}
+							<span className="font-semibold">"{mockSnippet.title}"</span>
 						</CardDescription>
 					</div>
 					<Button variant="outline" size="sm" asChild>
@@ -92,7 +68,7 @@ export default function EditSnippet() {
 								<Label htmlFor="title">Title</Label>
 								<Input
 									name="title"
-									defaultValue={snippet.title}
+									defaultValue={mockSnippet.title}
 									required
 									className="bg-background"
 								/>
@@ -102,7 +78,7 @@ export default function EditSnippet() {
 								<Label htmlFor="language">Language</Label>
 								<Select
 									name="language"
-									defaultValue={snippet.language}
+									defaultValue={mockSnippet.language}
 									required
 								>
 									<SelectTrigger name="language">
@@ -124,7 +100,7 @@ export default function EditSnippet() {
 							<Label htmlFor="code">Code</Label>
 							<Textarea
 								name="code"
-								defaultValue={snippet.code}
+								defaultValue={mockSnippet.code}
 								required
 								className="min-h-[300px] font-mono text-sm bg-slate-950 text-slate-50 resize-y focus-visible:ring-orange-500"
 								placeholder="// Your code here..."
@@ -136,7 +112,7 @@ export default function EditSnippet() {
 							<Label htmlFor="description">Description (optional)</Label>
 							<Input
 								name="description"
-								defaultValue={snippet.description || ""}
+								defaultValue={mockSnippet.description || ""}
 								placeholder="Briefly describe what this snippet does..."
 								className="bg-background"
 							/>
@@ -150,22 +126,9 @@ export default function EditSnippet() {
 								</Link>
 							</Button>
 
-							<Button
-								type="submit"
-								disabled={updateMutation.isPending}
-								className="min-w-[140px]"
-							>
-								{updateMutation.isPending ? (
-									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Updating...
-									</>
-								) : (
-									<>
-										<Save className="mr-2 h-4 w-4" />
-										Save Changes
-									</>
-								)}
+							<Button type="submit" className="min-w-[140px]">
+								<Save className="mr-2 h-4 w-4" />
+								Save Changes
 							</Button>
 						</div>
 					</form>

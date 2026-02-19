@@ -1,9 +1,5 @@
-import {
-	createFileRoute,
-	Link,
-	Outlet,
-	useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,12 +15,12 @@ import { snippetSearchSchema } from "@/routes/snippets/-types/searchSchema";
 
 export const Route = createFileRoute("/snippets/_filters")({
 	component: Filters,
-	validateSearch: snippetSearchSchema,
+	validateSearch: zodValidator(snippetSearchSchema),
 });
 
 function Filters() {
 	const { search, language } = Route.useSearch();
-	const navigate = useNavigate();
+	const navigate = Route.useNavigate();
 	const [searchInput, setSearchInput] = useState(search);
 
 	useEffect(() => {

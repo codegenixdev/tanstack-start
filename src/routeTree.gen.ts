@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as HelloRouteImport } from './routes/hello'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SnippetsCreateRouteImport } from './routes/snippets/create'
 import { Route as SnippetsFiltersRouteImport } from './routes/snippets/_filters'
@@ -17,11 +16,6 @@ import { Route as SnippetsFiltersIndexRouteImport } from './routes/snippets/_fil
 import { Route as SnippetsSnippetIdIndexRouteImport } from './routes/snippets/$snippetId/index'
 import { Route as SnippetsSnippetIdEditRouteImport } from './routes/snippets/$snippetId/edit'
 
-const HelloRoute = HelloRouteImport.update({
-  id: '/hello',
-  path: '/hello',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -55,7 +49,6 @@ const SnippetsSnippetIdEditRoute = SnippetsSnippetIdEditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/hello': typeof HelloRoute
   '/snippets': typeof SnippetsFiltersRouteWithChildren
   '/snippets/create': typeof SnippetsCreateRoute
   '/snippets/$snippetId/edit': typeof SnippetsSnippetIdEditRoute
@@ -64,7 +57,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/hello': typeof HelloRoute
   '/snippets/create': typeof SnippetsCreateRoute
   '/snippets/$snippetId/edit': typeof SnippetsSnippetIdEditRoute
   '/snippets/$snippetId': typeof SnippetsSnippetIdIndexRoute
@@ -73,7 +65,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/hello': typeof HelloRoute
   '/snippets/_filters': typeof SnippetsFiltersRouteWithChildren
   '/snippets/create': typeof SnippetsCreateRoute
   '/snippets/$snippetId/edit': typeof SnippetsSnippetIdEditRoute
@@ -84,7 +75,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/hello'
     | '/snippets'
     | '/snippets/create'
     | '/snippets/$snippetId/edit'
@@ -93,7 +83,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/hello'
     | '/snippets/create'
     | '/snippets/$snippetId/edit'
     | '/snippets/$snippetId'
@@ -101,7 +90,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/hello'
     | '/snippets/_filters'
     | '/snippets/create'
     | '/snippets/$snippetId/edit'
@@ -111,7 +99,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  HelloRoute: typeof HelloRoute
   SnippetsFiltersRoute: typeof SnippetsFiltersRouteWithChildren
   SnippetsCreateRoute: typeof SnippetsCreateRoute
   SnippetsSnippetIdEditRoute: typeof SnippetsSnippetIdEditRoute
@@ -120,13 +107,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/hello': {
-      id: '/hello'
-      path: '/hello'
-      fullPath: '/hello'
-      preLoaderRoute: typeof HelloRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -186,7 +166,6 @@ const SnippetsFiltersRouteWithChildren = SnippetsFiltersRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  HelloRoute: HelloRoute,
   SnippetsFiltersRoute: SnippetsFiltersRouteWithChildren,
   SnippetsCreateRoute: SnippetsCreateRoute,
   SnippetsSnippetIdEditRoute: SnippetsSnippetIdEditRoute,

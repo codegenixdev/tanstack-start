@@ -1,4 +1,3 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Copy, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -13,38 +12,25 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import type { Snippet } from "@/db/schema";
-import { copyToClipboard } from "@/routes/-lib/client-actions";
-import { useDeleteSnippet } from "@/routes/snippets/-services/mutations";
-import { snippetsQueryOptions } from "@/routes/snippets/-services/queries";
+import { mockSnippets } from "@/routes/-lib/mock";
 
 export const Route = createFileRoute("/snippets/_filters/")({
 	component: Snippets,
-	// show that what isomorphic mean
-	loader: async ({ context, deps: { search } }) => {
-		context.queryClient.prefetchQuery(
-			snippetsQueryOptions(search.search, search.language),
-		);
-	},
 	pendingComponent: () => <>Loading...</>,
-	// loaderDeps: ({ search }) => ({ search }),
 });
 
 function Snippets() {
 	const { search, language } = Route.useSearch();
-	const snippetsQuery = useSuspenseQuery(
-		snippetsQueryOptions(search, language),
-	);
 
 	return (
 		<>
 			<div className="mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{snippetsQuery.data.map((snippet) => (
+				{mockSnippets.map((snippet) => (
 					<SnippetCard key={snippet.id} snippet={snippet} />
 				))}
 			</div>
 
-			{snippetsQuery.data.length === 0 && (
+			{mockSnippets.length === 0 && (
 				<div className="text-center py-20">
 					<p className="text-muted-foreground">
 						No snippets found.{" "}
@@ -58,19 +44,12 @@ function Snippets() {
 	);
 }
 
-function SnippetCard({ snippet }: { snippet: Snippet }) {
-	const deleteSnippetMutation = useDeleteSnippet();
+function SnippetCard({ snippet }: { snippet: (typeof mockSnippets)[0] }) {
 	const confirm = useConfirm();
 	const [isCopied, setIsCopied] = useState(false);
 
 	const handleCopy = async () => {
-		try {
-			await copyToClipboard(snippet.code);
-			setIsCopied(true);
-			setTimeout(() => setIsCopied(false), 2000);
-		} catch (err) {
-			console.error("Failed to copy text: ", err);
-		}
+		// implement copy
 	};
 
 	const handleDelete = async () => {
@@ -83,7 +62,7 @@ function SnippetCard({ snippet }: { snippet: Snippet }) {
 		});
 
 		if (shouldDelete) {
-			deleteSnippetMutation.mutate(snippet.id);
+			// implement delete
 		}
 	};
 

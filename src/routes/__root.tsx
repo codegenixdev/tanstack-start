@@ -3,14 +3,14 @@ import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
 	HeadContent,
-	redirect,
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { Navbar } from "@/components/navbar";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { Toaster } from "@/components/ui/sonner";
-import { Navbar } from "../components/navbar";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
+import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -38,16 +38,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 		],
 	}),
-
 	shellComponent: RootDocument,
-	errorComponent: (e) => {
-		console.log("e", e);
-		return <div>Global Error</div>;
-	},
-	notFoundComponent: () => {
-		throw redirect({ to: "/" });
-		// return <div>Global Not Found</div>;
-	},
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -59,21 +50,23 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<body>
 				<ConfirmProvider>
 					<div className="max-w-6xl mx-auto py-2 px-4">
-						<Toaster />
-						<Navbar />
-						{children}
-						<TanStackDevtools
-							config={{
-								position: "bottom-right",
-							}}
-							plugins={[
-								{
-									name: "Tanstack Router",
-									render: <TanStackRouterDevtoolsPanel />,
-								},
-								TanStackQueryDevtools,
-							]}
-						/>
+						<TanStackQueryProvider>
+							<Toaster />
+							<Navbar />
+							{children}
+							<TanStackDevtools
+								config={{
+									position: "bottom-right",
+								}}
+								plugins={[
+									{
+										name: "Tanstack Router",
+										render: <TanStackRouterDevtoolsPanel />,
+									},
+									TanStackQueryDevtools,
+								]}
+							/>
+						</TanStackQueryProvider>
 						<Scripts />
 					</div>
 				</ConfirmProvider>
