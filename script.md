@@ -51,6 +51,7 @@ export const db = drizzle(getDatabaseUrl(), { schema });
 import type { InferSelectModel } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createSelectSchema } from "drizzle-zod";
+import type { z } from "zod/v4";
 
 export const snippets = sqliteTable("snippets", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -73,6 +74,7 @@ export const updateSnippetSchema = createSelectSchema(snippets, {
 });
 
 export type Snippet = InferSelectModel<typeof snippets>;
+export type UpdateSnippetSchema = z.infer<typeof updateSnippetSchema>;
 ```
 
 ---
@@ -259,11 +261,13 @@ import {
 
 export const deleteSnippet = createServerFn({
   method: "POST",
-}).handler(async ({ data }) => {
-  console.log("data", data);
-  await db.delete(snippets).where(eq(snippets.id, data.id));
-  return { success: true };
-});
+})
+  .inputValidator((params: { id: number }) => params)
+  .handler(async ({ data }) => {
+    console.log("data", data);
+    await db.delete(snippets).where(eq(snippets.id, data.id));
+    return { success: true };
+  });
 
 export const useDeleteSnippet = () => {
   const router = useRouter();
@@ -343,7 +347,7 @@ loader: async ({ context, deps: { search } }) => {
     snippetsQueryOptions(search.search, search.language),
   );
 },
-// loaderDeps: ({ search }) => ({ search }),
+loaderDeps: ({ search }) => ({ search }),
 ```
 
 ```tsx
@@ -383,9 +387,19 @@ function SnippetCard({ snippet }: { snippet: Snippet }) {
     }
   };
 
-  if (shouldDelete) {
-    deleteSnippetMutation.mutate(snippet.id);
-  }
+  const handleDelete = async () => {
+    const shouldDelete = await confirm({
+      title: "Delete Snippet",
+      description:
+        "Are you sure you want to delete this snippet? This action cannot be undone.",
+      confirmText: "Delete",
+      variant: "destructive",
+    });
+
+    if (shouldDelete) {
+      deleteSnippetMutation.mutate(snippet.id);
+    }
+  };
 }
 ```
 
@@ -470,7 +484,7 @@ const handleCopy = async () => {
 const handleDelete = async () => {
   const isConfirmed = await confirm();
   if (!isConfirmed) return;
-  await deleteFn({ data: { id: snippetId } });
+  await deleteFn({ data: { id: +snippetId } });
   toast.success("Snippet deleted successfully");
   router.navigate({ to: "/snippets" });
   router.invalidate();
