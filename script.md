@@ -1,6 +1,6 @@
 # TanStack Start Tutorial - Code Snippets (Organized)
 
-In this tutorial, we are going to use the power of TanStack Start to create a full-stack, fully type-safe, server-side code snippet manager web application.
+In this tutorial, we are going to use the power of TanStack Start to create a beautiful full-stack, fully type-safe and server-side code snippet manager web application.
 
 TanStack Start is a full-stack framework powered by TanStack Router and other TanStack libraries & ecosystem, with great SSR, streaming, and server functions support. It offers fully type-safe routing because of TanStack Router and selective usage of server and client as you see fit.
 
